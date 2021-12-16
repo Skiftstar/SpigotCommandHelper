@@ -47,12 +47,12 @@ public final class SCommand implements CommandExecutor {
             return false;
         }
         if (execPerm != null && e.isPlayer() && !e.player().hasPermission(execPerm)) {
-            sender.sendMessage(helper.getMess(e.player(), "NEPerms"));
+            sender.sendMessage(helper.getMess(e.player(), "NEPerms", true));
             return false;
         }
         if (args.length < minArgs) {
             if (e.isPlayer()) {
-                sender.sendMessage(helper.getMess(e.player(), "NEArgs"));
+                sender.sendMessage(helper.getMess(e.player(), "NEArgs", true));
             } else {
                 sender.sendMessage(helper.getMess("NEArgs"));
             }
