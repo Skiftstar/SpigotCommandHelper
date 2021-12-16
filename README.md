@@ -6,6 +6,15 @@ Add using maven:
   <url>https://jitpack.io</url>
 </repository>
 ```
+With Prefixes:
+```
+<dependency>
+  <groupId>com.github.Skiftstar</groupId>
+  <artifactId>SpigotCommandHelper</artifactId>
+  <version>1.1-SNAPSHOT</version>
+</dependency>
+```
+Without Prefixes:
 ```
 <dependency>
   <groupId>com.github.Skiftstar</groupId>
