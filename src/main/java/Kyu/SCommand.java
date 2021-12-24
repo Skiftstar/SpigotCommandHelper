@@ -23,6 +23,10 @@ public final class SCommand implements CommandExecutor {
         plugin.getCommand(command).setExecutor(this);
     }
 
+    public void setLangHelper(LanguageHelper helper) {
+        this.helper = helper;
+    }
+
     public void execPerm(String perm) {
         execPerm = perm;
     }
