@@ -5,15 +5,19 @@ import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabCompleter;
-import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 public final class SCommand implements CommandExecutor, TabCompleter {
 
@@ -22,7 +26,10 @@ public final class SCommand implements CommandExecutor, TabCompleter {
     private String execPerm = null;
     private int minArgs = 0;
     private boolean playerOnly = false;
+    private boolean handleTabByArguments = true;
+    private Supplier<List<String>> tabSupplier = null;
     private LanguageHelper helper;
+    private Map<Integer, List<Argument>> args = new HashMap<>();
 
     public SCommand(JavaPlugin plugin, String command, LanguageHelper helper) {
         this.helper = helper;
@@ -45,6 +52,14 @@ public final class SCommand implements CommandExecutor, TabCompleter {
         this.playerOnly = playerOnly;
     }
 
+    public void handleTabByArguments(boolean handleTabByArguments) {
+        this.handleTabByArguments = handleTabByArguments;
+    }
+
+    public void zeroArgTab(Supplier<List<String>> function) {
+        tabSupplier = function;
+    }
+
     public void exec(Consumer<CommandEvent> con) {
         consumer = con;
     }
@@ -53,8 +68,24 @@ public final class SCommand implements CommandExecutor, TabCompleter {
         tabConsumer = con;
     }
 
+    public void addArgument(Argument arg) {
+        int slot = arg.getArgSlot();
+        if (!args.containsKey(slot)) {
+            args.put(slot, new ArrayList<>(Arrays.asList(arg)));
+        }
+        args.get(slot).add(arg);
+    }
+
+    public void removeArgument(Argument arg) {
+        int slot = arg.getArgSlot();
+        if (args.containsKey(slot)) {
+            args.get(slot).remove(arg);
+        }
+    }
+
     @Override
-    public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, @NotNull String[] args) {
+    public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label,
+            @NotNull String[] args) {
         CommandEvent e = new CommandEvent(sender, command, label, args);
         if (playerOnly && !e.isPlayer()) {
             sender.sendMessage(helper.getMess("PlayerOnly"));
@@ -73,87 +104,51 @@ public final class SCommand implements CommandExecutor, TabCompleter {
             return false;
         }
 
+        for (int slot : this.args.keySet()) {
+            if (slot > e.args().length - 1) {
+                continue;
+            }
+            for (Argument arg : this.args.get(slot)) {
+                if (e.args()[slot].equalsIgnoreCase(arg.getArgName())) {
+                    arg.accept(e);
+                    return true;
+                }
+            }
+        }
+
         if (consumer != null) {
             consumer.accept(e);
             return true;
-        } else return false;
+        } else
+            return true;
     }
 
     @Override
     public @Nullable List<String> onTabComplete(@NotNull CommandSender sender, @NotNull Command cmd,
             @NotNull String label, @NotNull String[] args) {
-        return tabConsumer != null ? tabConsumer.apply(new TabEvent(sender, cmd, label, args)) : Collections.emptyList();
-    }
-
-    public class CommandEvent {
-        private CommandSender sender;
-        private Command command;
-        private String label;
-        private String[] args;
-
-        public CommandEvent(CommandSender sender, Command command, String label, String[] args) {
-            this.sender = sender;
-            this.command = command;
-            this.label = label;
-            this.args = args;
+        if (!handleTabByArguments) {
+            return tabConsumer != null ? tabConsumer.apply(new TabEvent(sender, cmd, label, args))
+                    : Collections.emptyList();
+        }
+        List<Argument> arguments = new ArrayList<>();
+        for (int slot : this.args.keySet()) {
+            arguments.addAll(this.args.get(slot));
         }
 
-        public CommandSender sender() {
-            return sender;
+        if (args.length == 1 && tabSupplier != null) {
+            return tabSupplier.get();
         }
 
-        public Command command() {
-            return command;
-        }
-
-        public String label() {
-            return label;
-        }
-
-        public String[] args() {
-            return args;
-        }
-
-        public boolean isPlayer() {
-            return sender instanceof Player;
-        }
-
-        public Player player() {
-            return sender instanceof Player ? (Player) sender : null;
-        }
-
-
-    }
-
-    public class TabEvent {
-
-        private CommandSender sender;
-        private Command command;
-        private String label;
-        private String[] args;
-
-        public TabEvent(CommandSender sender, Command command, String label, String[] args) {
-            this.sender = sender;
-            this.command = command;
-            this.label = label;
-            this.args = args;
-        }
-
-        public CommandSender sender() {
-            return sender;
-        }
-
-        public Command command() {
-            return command;
-        }
-
-        public String label() {
-            return label;
-        }
-
-        public String[] args() {
-            return args;
-        }
-
+        for (int i = 0; i < args.length; i++) {
+            for (Argument arg : arguments) {
+                if (arg.getArgSlotAbsolute() == i && arg.getArgName().equalsIgnoreCase(args[i])) {
+                    if (i == args.length - 2) {
+                        return arg.getTabValues();
+                    }
+                    arguments = arg.getArgumentsList();
+                }
+            }
+        }   
+        return Collections.emptyList();
     }
 }

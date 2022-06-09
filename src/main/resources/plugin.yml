@@ -2,3 +2,7 @@ name: SpigotCommandHelper
 version: '${project.version}'
 main: Kyu.SCommand
 api-version: 1.18
+
+commands:
+  test:
+    description: test
