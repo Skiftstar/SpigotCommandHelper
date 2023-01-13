@@ -1,7 +1,9 @@
 package Kyu;
 
-import org.bukkit.plugin.java.JavaPlugin;
+import java.util.ArrayList;
+import java.util.Arrays;
 
+import org.bukkit.plugin.java.JavaPlugin;
 import Kyu.LangSupport.LanguageHelper;
 import net.kyori.adventure.text.Component;
 
@@ -12,20 +14,24 @@ public class Main extends JavaPlugin {
         
         LanguageHelper helper = new LanguageHelper(this, "en", getTextResource("en.yml"), "testPrefix");
         SCommand command = new SCommand(this, "test", helper);
-        Argument arg1 = new Argument("arg1", 0, e -> {
+        Argument arg1 = command.addArgument("arg1", 0, e -> {
             e.player().sendMessage(Component.text("arg1"));
         });
-        Argument arg2 = new Argument("arg2", 0, e -> {
+        command.addArgument("arg2", 0, e -> {
             e.player().sendMessage(Component.text("arg2"));
         });
 
-        Argument arg3 = new Argument("deepArg1", 0, e -> {
+        arg1.setTabValues(() -> {
+            return new ArrayList<String>(Arrays.asList("test"));
+        });
+
+        arg1.addArgument("deepArg1", 0, e -> {
             e.player().sendMessage(Component.text("deepArg1"));
         });
 
-        command.addArgument(arg1);
-        command.addArgument(arg2);
-        arg1.addArgument(arg3);
+        arg1.addArgument("testArg", 2, e -> {
+            e.player().sendMessage(Component.text("testArg"));
+        });
     }
 
     @Override

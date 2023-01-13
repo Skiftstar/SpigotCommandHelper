@@ -76,6 +76,12 @@ public final class SCommand implements CommandExecutor, TabCompleter {
         args.get(slot).add(arg);
     }
 
+    public Argument addArgument(String name, int relativeSlot, Consumer<CommandEvent> e) {
+        Argument arg = new Argument(name, relativeSlot, e);
+        addArgument(arg);
+        return arg;
+    }
+
     public void removeArgument(Argument arg) {
         int slot = arg.getArgSlot();
         if (args.containsKey(slot)) {
@@ -139,16 +145,16 @@ public final class SCommand implements CommandExecutor, TabCompleter {
             return tabSupplier.get();
         }
 
-        for (int i = 0; i < args.length; i++) {
-            for (Argument arg : arguments) {
-                if (arg.getArgSlotAbsolute() == i && arg.getArgName().equalsIgnoreCase(args[i])) {
-                    if (i == args.length - 2) {
-                        return arg.getTabValues();
-                    }
-                    arguments = arg.getArgumentsList();
+        for (int slot : this.args.keySet()) {
+            if (slot > args.length - 1) {
+                continue;
+            }
+            for (Argument arg : this.args.get(slot)) {
+                if (args[slot].equalsIgnoreCase(arg.getArgName())) {
+                    return arg.getTabValues(args);
                 }
             }
-        }   
+        }
         return Collections.emptyList();
     }
 }

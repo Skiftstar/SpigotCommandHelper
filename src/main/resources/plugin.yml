@@ -1,7 +1,7 @@
 name: SpigotCommandHelper
 version: '${project.version}'
-main: Kyu.SCommand
-api-version: 1.18
+main: Kyu.Main
+api-version: 1.19
 
 commands:
   test:
